@@ -90,19 +90,8 @@ if args.cuda:
     torch.cuda.set_device(3)
     model.cuda()
 
-def ternarize_grad(self, grad_input, grad_output):
-    grad_output[0].data=Binarize(grad_output[0].data)
-
-def search_binarized_modules(model):
-    for m in model.children():
-        if 'Binarize' in m.__class__.__name__:
-            m.counter=0
-            #m=torch.nn.utils.weight_norm(m,name='weight')
-            m.register_backward_hook(ternarize_grad)
-        search_binarized_modules(m)
 
 criterion = nn.CrossEntropyLoss()
-search_binarized_modules(model)
 optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
 

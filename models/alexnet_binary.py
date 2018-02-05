@@ -56,7 +56,7 @@ class AlexNetOWT_BN(nn.Module):
         #    25: {'lr': 1e-4}
         #}
         self.regime = {
-            0: {'optimizer': 'Adam', 'lr': 1e-3},
+            0: {'optimizer': 'Adam', 'lr': 5e-3},
             20: {'lr': 1e-3},
             30: {'lr': 5e-4},
             35: {'lr': 1e-4},

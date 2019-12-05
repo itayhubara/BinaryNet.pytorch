@@ -8,7 +8,7 @@ import torch.optim as optim
 from torchvision import datasets, transforms
 from torch.autograd import Variable
 from models.binarized_modules import  BinarizeLinear,BinarizeConv2d
-from models.binarized_modules import  Binarize,Ternarize,Ternarize2,Ternarize3,Ternarize4,HingeLoss
+from models.binarized_modules import  Binarize,HingeLoss
 # Training settings
 parser = argparse.ArgumentParser(description='PyTorch MNIST Example')
 parser.add_argument('--batch-size', type=int, default=64, metavar='N',
@@ -145,3 +145,5 @@ def test():
 for epoch in range(1, args.epochs + 1):
     train(epoch)
     test()
+    if epoch%40==0:
+        optimizer.param_groups[0]['lr']=optimizer.param_groups[0]['lr']*0.1

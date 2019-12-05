@@ -65,5 +65,5 @@ class AlexNetOWT_BN(nn.Module):
 
 
 def model(**kwargs):
-    num_classes = getattr(kwargs,'num_classes', 1000)
+    num_classes = kwargs.get( 'num_classes', 1000)
     return AlexNetOWT_BN(num_classes)

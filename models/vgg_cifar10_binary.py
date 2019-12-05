@@ -76,5 +76,5 @@ class VGG_Cifar10(nn.Module):
 
 
 def vgg_cifar10_binary(**kwargs):
-    num_classes = getattr(kwargs,'num_classes', 10)
+    num_classes = kwargs.get( 'num_classes', 10)
     return VGG_Cifar10(num_classes)

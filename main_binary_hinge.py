@@ -68,12 +68,14 @@ parser.add_argument('-e', '--evaluate', type=str, metavar='FILE',
 
 torch.cuda.random.manual_seed_all(10)
 
+output_dim = 0
 
 
 def main():
-    global args, best_prec1
+    global args, best_prec1, output_dim
     best_prec1 = 0
     args = parser.parse_args()
+    output_dim = {'cifar10': 10, 'cifar100':100, 'imagenet': 1000}[args.dataset]
     #import pdb; pdb.set_trace()
     #torch.save(args.batch_size/(len(args.gpus)/2+1),'multi_gpu_batch_size')
     if args.evaluate:
@@ -101,11 +103,12 @@ def main():
     # create model
     logging.info("creating model %s", args.model)
     model = models.__dict__[args.model]
-    model_config = {'input_size': args.input_size, 'dataset': args.dataset}
+
+
+    model_config = {'input_size': args.input_size, 'dataset': args.dataset, 'num_classes': output_dim}
 
     if args.model_config is not '':
         model_config = dict(model_config, **literal_eval(args.model_config))
-
     model = model(**model_config)
     logging.info("created model with configuration: %s", model_config)
 
@@ -174,7 +177,7 @@ def main():
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     logging.info('training regime: %s', regime)
     #import pdb; pdb.set_trace()
-    search_binarized_modules(model)
+    #search_binarized_modules(model)
 
     for epoch in range(args.start_epoch, args.epochs):
         optimizer = adjust_optimizer(optimizer, epoch, regime)
@@ -234,30 +237,39 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
         # measure data loading time
         data_time.update(time.time() - end)
         if args.gpus is not None:
-            target = target.cuda(async=True)
+            target = target.cuda()
         #import pdb; pdb.set_trace()
         if  criterion.__class__.__name__=='HingeLoss':
             target=target.unsqueeze(1)
-            target_onehot = torch.cuda.FloatTensor(target.size(0), 10)
+            target_onehot = torch.cuda.FloatTensor(target.size(0), output_dim)
             target_onehot.fill_(-1)
             target_onehot.scatter_(1, target, 1)
             target=target.squeeze()
-        input_var = Variable(inputs.type(args.type), volatile=not training)
-        target_var = Variable(target_onehot)
+        if not training:
+            with torch.no_grad():
+                input_var = Variable(inputs.type(args.type))
+                target_var = Variable(target_onehot)
 
-        # compute output
-        output = model(input_var)
+                # compute output
+                output = model(input_var)
+        else:
+                input_var = Variable(inputs.type(args.type))
+                target_var = Variable(target_onehot)
+
+                # compute output
+                output = model(input_var)
+
         #import pdb; pdb.set_trace()
-        loss = criterion(output, target_var)
+        loss = criterion(output, target_onehot)
         #import pdb; pdb.set_trace()
         if type(output) is list:
             output = output[0]
 
         # measure accuracy and record loss
         prec1, prec5 = accuracy(output.data, target, topk=(1, 5))
-        losses.update(loss.data[0], inputs.size(0))
-        top1.update(prec1[0], inputs.size(0))
-        top5.update(prec5[0], inputs.size(0))
+        losses.update(loss.item(), inputs.size(0))
+        top1.update(prec1.item(), inputs.size(0))
+        top5.update(prec5.item(), inputs.size(0))
         #import pdb; pdb.set_trace()
         #if not training and top1.avg<15:
         #    import pdb; pdb.set_trace()

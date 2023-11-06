@@ -259,13 +259,7 @@ def forward(data_loader, model, criterion, epoch=0, training=True, optimizer=Non
             # compute gradient and do SGD step
             optimizer.zero_grad()
             loss.backward()
-            for p in list(model.parameters()):
-                if hasattr(p,'org'):
-                    p.data.copy_(p.org)
             optimizer.step()
-            for p in list(model.parameters()):
-                if hasattr(p,'org'):
-                    p.org.copy_(p.data.clamp_(-1,1))
 
 
         # measure elapsed time
